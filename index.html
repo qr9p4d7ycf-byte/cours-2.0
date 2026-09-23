@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Révis GEII – mon atelier de révision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --paper:#F4F7FB;--grid:rgba(22,35,59,.055);--surface:#FFFFFF;--soft:#EEF2F8;
+  --ink:#16233B;--ink2:#52617C;--line:#D3DBE8;--hl:#FFE45E;
+  --ok:#11785A;--okbg:#E2F4EC;--bad:#C4283A;--badbg:#FBE7EA;--warn:#9A5B00;--warnbg:#FFF1D6;
+  --f-head:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{--paper:#0E1524;--grid:rgba(255,255,255,.035);--surface:#161F33;--soft:#1D2842;
+    --ink:#E8EDF7;--ink2:#9AA8C3;--line:#2B3856;--hl:#6E5C08;
+    --ok:#4FD1A5;--okbg:#12362B;--bad:#FF7B89;--badbg:#3D1B22;--warn:#F2B44D;--warnbg:#3A2C10;}
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:12px}
+body{margin:0;font:16px/1.55 var(--f-body);color:var(--ink);background:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+.brand{font:700 26px/1 var(--f-head);margin:6px 0 16px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.brand .hl{background:linear-gradient(transparent 55%,var(--hl) 55%);padding:0 4px}
+.brand small{font:400 14px var(--f-body);color:var(--ink2)}
+h1,h2,h3{font-family:var(--f-head);line-height:1.15;margin:0}
+h1{font-size:30px}h2{font-size:22px}h3{font-size:17px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--c,var(--ink));outline-offset:2px}
+
+/* classeur : onglets */
+.tabs{display:flex;align-items:flex-end;gap:3px;overflow-x:auto;scrollbar-width:thin}
+.tabs::after{content:'';flex:1 0 12px;border-bottom:1px solid var(--line)}
+.tab{flex:0 0 auto;padding:9px 16px 8px;background:var(--soft);border:1px solid var(--line);border-top:4px solid var(--c,var(--ink2));
+  border-radius:7px 7px 0 0;cursor:pointer;color:var(--ink2);white-space:nowrap;font-weight:500}
+.tab:hover{color:var(--ink)}
+.tab.on{background:var(--surface);color:var(--ink);border-bottom-color:var(--surface);font-weight:600}
+.tab.add,.tab.gear{border-top-color:var(--line);background:transparent;border-style:dashed;border-bottom-style:solid}
+.sheet{background:var(--surface);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;min-height:60vh}
+.subhead{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:22px 24px 6px}
+.subhead h1{border-left:6px solid var(--c);padding-left:12px}
+.subnav{display:flex;gap:6px;flex-wrap:wrap;padding:8px 24px 0;border-bottom:1px solid var(--line)}
+.subnav button{background:none;border:0;padding:8px 10px 10px;cursor:pointer;color:var(--ink2);font-weight:500}
+.subnav button.on{color:var(--ink);font-weight:600;background:linear-gradient(transparent 62%,var(--hl) 62%)}
+.pane{padding:22px 24px 30px}
+.dash{padding:26px 24px 30px}
+.muted{color:var(--ink2)}
+.chip{display:inline-block;font-size:13px;padding:2px 9px;border-radius:99px;background:var(--soft);border:1px solid var(--line);color:var(--ink2)}
+.chip.warn{background:var(--warnbg);color:var(--warn);border-color:transparent}
+.chip.ok{background:var(--okbg);color:var(--ok);border-color:transparent}
+.chip.bad{background:var(--badbg);color:var(--bad);border-color:transparent}
+
+/* boutons & champs */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--line);background:var(--surface);border-radius:5px;cursor:pointer;font-weight:500}
+.btn:hover{border-color:var(--ink2)}
+.btn.pri{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.btn.pri:hover{opacity:.9}
+.btn.sm{padding:4px 10px;font-size:14px}
+.btn.red{color:var(--bad)}
+.btn.wide{width:100%;justify-content:center;padding:12px}
+.link{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;cursor:pointer}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:8px 10px;max-width:100%}
+textarea{width:100%;resize:vertical;line-height:1.5}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.gen{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:14px}
+.gen h3{margin-bottom:10px}
+.hint{margin:10px 0 0;color:var(--warn);font-size:14px}
+.empty{padding:34px 10px;text-align:center;color:var(--ink2);max-width:520px;margin:0 auto}
+.empty h3{color:var(--ink);margin-bottom:6px}
+.empty .btn{margin-top:12px}
+
+/* jauge graduée */
+.gauge{position:relative;height:12px;background:var(--soft);border:1px solid var(--line);border-radius:3px;min-width:80px}
+.gauge i{position:absolute;left:0;top:0;bottom:0;width:var(--v);background:var(--c,var(--ink));border-radius:2px}
+.gauge::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(10% - 1px),var(--surface) calc(10% - 1px),var(--surface) 10%)}
+.gauge b{position:absolute;top:-4px;bottom:-4px;left:85%;width:2px;background:var(--ink);z-index:2}
+
+/* tableau de bord */
+.lead{font-size:20px;max-width:46ch;margin:10px 0 4px}
+mark{background:linear-gradient(transparent 55%,var(--hl) 55%);color:inherit;padding:0 2px}
+.subrows{list-style:none;margin:22px 0 0;padding:0;border-top:1px solid var(--line)}
+.subrow{display:grid;grid-template-columns:minmax(150px,1.2fr) 2fr 46px 130px 150px;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+.subrow .name{background:none;border:0;text-align:left;cursor:pointer;font:600 17px var(--f-head);border-left:5px solid var(--c);padding:2px 0 2px 10px}
+.subrow .num{font-weight:600;text-align:right}
+.todo{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:10px}
+.todo li{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--line);border-left:5px solid var(--c);border-radius:5px;padding:10px 14px}
+.banner{background:var(--warnbg);color:var(--warn);border-radius:6px;padding:12px 16px;margin:16px 0;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.steps{margin:8px 0 0;padding-left:20px}
+
+/* cours */
+.split{display:grid;grid-template-columns:270px 1fr;gap:22px}
+.doclist ul{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.doc{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:5px;padding:8px 10px;cursor:pointer;display:grid}
+.doc small{color:var(--ink2)}
+.doc.on{background:var(--soft);border-color:var(--ink2);border-left-color:var(--c)}
+.editor .title{flex:1 1 280px;font:700 19px var(--f-head)}
+.editor .body{min-height:52vh;margin:12px 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14.5px}
+.parts{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px}
+.parts li{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:5px;padding:8px 12px}
+
+/* markdown rendu */
+.md{max-width:78ch}
+.md h1,.md h2{font-size:20px;margin:18px 0 6px;padding-bottom:3px;border-bottom:2px solid var(--line)}
+.md h3{margin:14px 0 4px}
+.md p{margin:8px 0}.md ul,.md ol{padding-left:22px}
+.md table{border-collapse:collapse;display:block;overflow-x:auto}
+.md th,.md td{border:1px solid var(--line);padding:5px 10px}
+.md code{background:var(--soft);padding:1px 5px;border-radius:3px}
+.md .katex-display{overflow-x:auto;overflow-y:hidden;padding:3px 0}
+.fiche,.exo{border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:16px;background:var(--surface)}
+.fiche>header,.exo>header{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;margin-bottom:6px}
+.exo{border-left:5px solid var(--line)}
+.exo.status-ok{border-left-color:var(--ok)}.exo.status-partial{border-left-color:var(--warn)}.exo.status-ko{border-left-color:var(--bad)}
+.corr{background:var(--soft);border-radius:5px;padding:4px 16px 10px;margin:12px 0}
+.fb{background:var(--soft);border-radius:5px;padding:4px 16px 10px;margin-top:10px}
+
+/* sessions cartes / qcm */
+.sess{max-width:720px;margin:0 auto}
+.sesshead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--ink2)}
+.flash{min-height:250px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;border:1px solid var(--line);border-top:6px solid var(--c);border-radius:8px;padding:26px;cursor:pointer;background:var(--surface);margin-bottom:14px;box-shadow:0 1px 0 var(--line),0 6px 0 -3px var(--soft)}
+.flash small{color:var(--ink2);margin-bottom:10px}
+.flash .md{font-size:19px;text-align:center}
+.rates{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.qtext{font-size:18px;margin:6px 0 16px}
+.choice{display:flex;gap:12px;width:100%;text-align:left;padding:11px 14px;margin-bottom:9px;background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer;align-items:flex-start}
+.choice:hover:not([disabled]){border-color:var(--ink2)}
+.choice .k{flex:0 0 26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;font-weight:600;font-size:13px}
+.choice.ok{background:var(--okbg);border-color:var(--ok)}
+.choice.no{background:var(--badbg);border-color:var(--bad)}
+.choice[disabled]{cursor:default}
+.choice[disabled]:not(.ok):not(.no){opacity:.55}
+.expl{background:var(--soft);border-radius:5px;padding:4px 16px 10px;margin:12px 0}
+.list{display:grid;gap:8px;margin-top:8px}
+.item{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;border:1px solid var(--line);border-radius:5px;padding:10px 14px}
+.stats{display:flex;gap:22px;flex-wrap:wrap;margin:0 0 14px}
+.stats div b{font:700 24px var(--f-head);display:block}
+
+/* progression */
+.tw{overflow-x:auto}
+table.prog{border-collapse:collapse;width:100%}
+table.prog th{text-align:left;font-weight:600;color:var(--ink2);padding:6px 10px;border-bottom:1px solid var(--line)}
+table.prog td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.prog td.g{min-width:140px}
+details{margin-top:16px}summary{cursor:pointer;font-weight:500}
+.set{margin-top:28px;padding-top:16px;border-top:1px solid var(--line)}
+.field{display:grid;gap:4px;margin-bottom:14px;max-width:560px}
+.field label{font-weight:600}
+
+/* semestres & gestion */
+.sems{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 13px;cursor:pointer;color:var(--ink2);font-size:14px}
+.pill:hover{border-color:var(--ink2)}
+.pill.on{background:var(--ink);color:var(--surface);border-color:var(--ink);font-weight:600}
+.mrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:5px;padding:8px 12px;margin-bottom:8px}
+.mrow .grow{flex:1 1 200px}
+.mrow input[type=color]{padding:0;width:38px;height:34px;cursor:pointer}
+button[disabled].btn{opacity:.4;cursor:default}
+/* infos système */
+#busy{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 18px;border-radius:99px;display:flex;gap:10px;align-items:center;z-index:50;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#busy[hidden]{display:none}
+.spin{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#toast{position:fixed;right:14px;bottom:14px;display:grid;gap:8px;z-index:60;max-width:min(420px,calc(100vw - 28px))}
+.t{padding:10px 14px;border-radius:6px;background:var(--ink);color:var(--surface);font-size:15px}
+.t.bad{background:var(--bad);color:#fff}
+@media (max-width:820px){
+  .split{grid-template-columns:1fr}
+  .subrow{grid-template-columns:1fr auto;}
+  .subrow .gauge{grid-column:1/-1;order:3}
+  .pane,.dash,.subhead{padding-left:14px;padding-right:14px}.subnav{padding-left:14px}
+  h1{font-size:25px}
+}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
+@media print{
+  body.printing *{visibility:hidden}
+  body.printing .print-target,body.printing .print-target *{visibility:visible}
+  body.printing .print-target{position:absolute;left:0;top:0;width:100%;border:0}
+  body.printing{background:#fff;color:#000}
+  .noprint{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="hl">Révis GEII</span><small>mon atelier de révision</small></div>
+  <div id="sems" class="sems" aria-label="Semestres"></div>
+  <nav id="tabs" class="tabs" aria-label="Matières"></nav>
+  <div class="sheet"><main id="main"></main></div>
+</div>
+<div id="busy" hidden role="status"><i class="spin"></i><span></span></div>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* ============================== Données ============================== */
+const KEY='geii-revision-v1';
+const COLORS=['#2F6FED','#E4572E','#17A398','#8E5BD9','#D99A00','#D6336C','#3F8F3F','#5C6B7A'];
+const KINDS={cours:'Cours',td:'TD / TP',annale:'Annale / DS',exo:'Exercices'};
+const TARGET=0.85;
+const MODELS=['llama-3.3-70b-versatile','llama-3.1-8b-instant','openai/gpt-oss-120b','openai/gpt-oss-20b','meta-llama/llama-4-scout-17b-16e-instruct'];
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=(s,r=document)=>r.querySelector(s);
+const words=t=>(String(t||'').trim().match(/\S+/g)||[]).length;
+const isChapter=d=>d.kind==='cours'||d.kind==='td';
+const pct=m=>Math.round(Math.max(0,Math.min(1,m))*100);
+
+function newSubject(name,i){return{id:uid(),name,color:COLORS[i%COLORS.length],examDate:'',semesterId:'',docs:[],fiches:[],cards:[],quizzes:[],exercises:[],log:[],self:{},wrongQ:[],plan:''};}
+function defaultState(){
+  const sem=[1,2,3,4,5,6].map(n=>({id:uid(),name:'Semestre '+n}));
+  return{v:2,settings:{apiKey:'',model:MODELS[0],maxChars:9000,lastExport:0},semesters:sem,
+    subjects:['Électronique analogique','Électronique numérique','Automatisme','Électrotechnique','Mathématiques','Programmation'].map((n,i)=>({...newSubject(n,i),semesterId:sem[0].id})),
+    ui:{tab:'dash',sub:'cours',sem:'all'}};}
+function migrate(s){const d=defaultState();s.settings=Object.assign(d.settings,s.settings||{});s.ui=Object.assign(d.ui,s.ui||{});
+  if(!Array.isArray(s.semesters)||!s.semesters.length)s.semesters=d.semesters;
+  s.subjects=(s.subjects||[]).map((x,i)=>Object.assign(newSubject(x.name||'Matière',i),x));
+  const ids=new Set(s.semesters.map(x=>x.id));
+  s.subjects.forEach(x=>{if(!ids.has(x.semesterId))x.semesterId=s.semesters[0].id;});
+  if(s.ui.sem!=='all'&&!ids.has(s.ui.sem))s.ui.sem='all';return s;}
+function load(){try{const r=localStorage.getItem(KEY);if(r)return migrate(JSON.parse(r));}catch(e){console.warn(e)}return defaultState();}
+let S=load();
+let saveT;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Sauvegarde impossible (stockage plein ou bloqué). Exporte tes données dans Réglages.','bad')}},250);}
+
+/* état temporaire (non sauvegardé) */
+const T={docId:{},busy:null,qs:null,cs:null,open:new Set(),edit:new Set(),showParts:false,opts:{},answers:{},exFilter:'all',oneEx:null,models:null};
+const curSubject=()=>S.subjects.find(s=>s.id===S.ui.tab);
+const curDoc=()=>{const s=curSubject();return s&&s.docs.find(d=>d.id===T.docId[s.id]);};
+const visibleSubjects=()=>S.ui.sem==='all'?S.subjects:S.subjects.filter(s=>s.semesterId===S.ui.sem);
+const semName=id=>(S.semesters.find(x=>x.id===id)||{}).name||'';
+const semOptions=v=>S.semesters.map(x=>`<option value="${x.id}" ${x.id===v?'selected':''}>${esc(x.name)}</option>`).join('');
+
+/* ============================== Utilitaires ============================== */
+function toast(msg,type='ok'){const el=document.createElement('div');el.className='t '+type;el.textContent=msg;$('#toast').appendChild(el);setTimeout(()=>el.remove(),type==='bad'?8000:2800);}
+function setBusy(label){T.busy=label;const b=$('#busy');b.hidden=!label;$('span',b).textContent=label||'';}
+async function withAI(label,fn){if(T.busy)return;setBusy(label);try{await fn();}catch(e){console.error(e);toast(e.message||String(e),'bad');}finally{setBusy(null);render();}}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fmtH(h){if(h<=0.02)return '0 min';if(h<1)return Math.max(5,Math.round(h*12)*5)+' min';return (Math.round(h*2)/2).toString().replace('.',',')+' h';}
+function daysLeft(s){if(!s.examDate)return null;return Math.ceil((new Date(s.examDate+'T23:59:59')-Date.now())/864e5);}
+function fmtDate(d){try{return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}catch{return d}}
+function download(name,text,type='application/json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+
+/* Markdown + LaTeX (KaTeX). Les formules sont extraites avant le Markdown pour ne pas être abîmées. */
+if(window.marked){marked.setOptions({breaks:true,gfm:true});marked.use({renderer:{html(h){return esc(h)}}});}
+function renderMD(src){
+  const maths=[];
+  const t=String(src||'').replace(/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|\$([^\n$]+?)\$/g,(m,a,b,c,d)=>{
+    const disp=a!==undefined||b!==undefined;maths.push({tex:(a??b??c??d).trim(),disp});return '@@M'+(maths.length-1)+'@@';});
+  let html=window.marked?marked.parse(t):esc(t).replace(/\n/g,'<br>');
+  return html.replace(/@@M(\d+)@@/g,(m,i)=>{const {tex,disp}=maths[i];
+    try{if(window.katex)return katex.renderToString(tex,{displayMode:disp,throwOnError:false});}catch(e){}
+    return esc(disp?'$$'+tex+'$$':'$'+tex+'$');});
+}
+const md=s=>`<div class="md">${renderMD(s)}</div>`;
+
+/* ============================== IA (Groq) ============================== */
+const GROQ='https://api.groq.com/openai/v1';
+async function ai(messages,{json=false,temperature=.4,max=3000}={}){
+  const key=(S.settings.apiKey||'').trim();
+  if(!key)throw new Error('Ajoute ta clé API Groq dans Réglages.');
+  const call=async useJson=>{
+    const body={model:S.settings.model,messages,temperature,max_tokens:max};
+    if(useJson)body.response_format={type:'json_object'};
+    let r;
+    try{r=await fetch(GROQ+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)});}
+    catch(e){throw new Error('Impossible de joindre Groq. Vérifie ta connexion internet.');}
+    if(!r.ok){
+      let raw=await r.text(),msg=raw,failed='';
+      try{const j=JSON.parse(raw);msg=j.error?.message||raw;failed=j.error?.failed_generation||'';}catch{}
+      let hint='';
+      if(r.status===401)hint=' → Clé API invalide : vérifie-la dans Réglages.';
+      if(r.status===429)hint=' → Limite de la version gratuite atteinte : attends un peu ou réduis la taille du texte dans Réglages.';
+      if(r.status===413)hint=' → Texte trop long : réduis la taille maximale dans Réglages.';
+      const err=new Error(`Groq (${r.status}) : ${msg}${hint}`);err.status=r.status;err.failed=failed;throw err;
+    }
+    const d=await r.json();return d.choices?.[0]?.message?.content||'';
+  };
+  try{return await call(json);}
+  catch(e){if(json&&e.status===400){if(e.failed)return e.failed;return await call(false);}throw e;}
+}
+/* Réparation des antislashs LaTeX dans le JSON renvoyé par l'IA (\frac, \text, \beta… sont des échappements JSON valides mais faux) */
+const LATEX_WORDS=new Set(['frac','tfrac','forall','flat','frown','text','textbf','textit','times','theta','tau','tan','tanh','to','top','triangle','tilde','therefore','beta','bar','begin','binom','big','bigg','boldsymbol','bullet','because','nu','neq','ne','ni','nabla','not','notin','nmid','ncong','newline','rho','right','rightarrow','rangle','rfloor','rceil','rm']);
+function fixEsc(t){let o='';for(let i=0;i<t.length;i++){const c=t[i];if(c!=='\\'){o+=c;continue;}const n=t[i+1];
+  if(n==='\\'||n==='"'||n==='/'){o+=c+n;i++;continue;}
+  if(n==='u'&&/^[0-9a-fA-F]{4}/.test(t.slice(i+2,i+6))){o+=c;continue;}
+  if(n&&'bfnrt'.includes(n)){const w=(t.slice(i+1).match(/^[A-Za-z]+/)||[''])[0];if(!LATEX_WORDS.has(w)){o+=c;continue;}}
+  o+='\\\\';}return o;}
+function parseJSON(t){t=String(t).trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();
+  const tryP=x=>JSON.parse(fixEsc(x));
+  try{return tryP(t);}catch(e){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a>=0&&b>a){try{return tryP(t.slice(a,b+1));}catch{}}}
+  throw new Error('La réponse de l’IA est illisible. Réessaie (ou choisis un modèle plus gros dans Réglages).');}
+const JSON_NOTE='Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour. Dans le JSON, double chaque antislash des formules LaTeX (écris \\\\frac, \\\\Omega, \\\\text).';
+const sys=s=>`Tu es un enseignant-tuteur de BUT GEII (Génie Électrique et Informatique Industrielle) en France. Matière : « ${s.name} ». Tu écris en français, avec rigueur (unités SI, notations françaises usuelles). Toute formule est écrite en LaTeX : $...$ en ligne, $$...$$ en bloc. Tu t'appuies d'abord sur le cours fourni et tu ne le contredis pas.`;
+
+/* Sources : budget de caractères réparti entre les documents */
+function budget(list){
+  let rem=S.settings.maxChars,left=list.length,trunc=false;const lim=[];
+  list.map((x,i)=>i).sort((a,b)=>list[a].text.length-list[b].text.length).forEach(i=>{const use=Math.min(list[i].text.length,Math.floor(rem/left));lim[i]=use;rem-=use;left--;});
+  return{sources:list.map((x,i)=>{if(x.text.length>lim[i])trunc=true;return{...x,text:x.text.slice(0,lim[i])};}),trunc};
+}
+function sourcesFor(s,val){
+  let docs;
+  if(val==='all'){docs=s.docs.filter(isChapter);if(!docs.length)docs=s.docs;}else docs=s.docs.filter(d=>d.id===val);
+  docs=docs.filter(d=>words(d.content)>5);
+  if(!docs.length)throw new Error('Ajoute d’abord du contenu dans l’onglet Cours.');
+  return budget(docs.map(d=>({id:d.id,title:d.title||'Sans titre',text:d.content})));
+}
+const srcText=src=>src.length===1?`(${src[0].title})\n${src[0].text}`:src.map((x,i)=>`### DOCUMENT ${i+1} : ${x.title}\n${x.text}`).join('\n\n');
+const docNote=src=>src.length>1?'Chaque élément porte un champ "doc" = numéro du DOCUMENT dont il provient.':'Mets "doc":1 dans chaque élément.';
+const docOf=(src,n)=>src.length===1?src[0].id:(src[(parseInt(n)||0)-1]?.id??null);
+const truncNote=src=>{if(src.trunc)toast(`Texte tronqué à ${S.settings.maxChars} caractères (modifiable dans Réglages).`);};
+
+/* ============================== Générateurs ============================== */
+async function makeFiche(s,src,type){
+  const P={
+    complete:`Rédige une fiche de révision structurée en Markdown contenant, dans cet ordre :\n## L'essentiel (5 à 8 lignes)\n## Définitions et notions clés\n## Formules à connaître (chaque formule en LaTeX, avec le sens de chaque symbole, son unité et ses conditions de validité)\n## Méthodes types (démarche pas à pas pour les exercices classiques)\n## Pièges et erreurs fréquentes\n## Mini-exemple résolu (avec un calcul numérique)\nReste dense et concis, pour une relecture la veille d'une évaluation. Pas d'introduction.`,
+    formulaire:`Rédige un formulaire en Markdown : UNIQUEMENT les formules, lois, théorèmes et relations importantes, regroupés par thème (## titres). Pour chaque formule : l'expression en LaTeX, la signification des symboles avec leurs unités, et les conditions de validité si elles existent. Pas de phrases inutiles.`,
+    express:`Rédige un résumé express en Markdown : 10 lignes maximum d'essentiel, puis « ## Les 5 formules à retenir » (LaTeX), puis « ## Le piège n°1 ».`};
+  const labels={complete:'Fiche complète',formulaire:'Formulaire',express:'Résumé express'};
+  const out=await ai([{role:'system',content:sys(s)},{role:'user',content:`${P[type]}\n\n=== COURS ===\n${srcText(src.sources)}`}],{max:3000,temperature:.3});
+  s.fiches.unshift({id:uid(),docId:src.sources.length===1?src.sources[0].id:null,title:(src.sources.length===1?src.sources[0].title:'Toute la matière')+' – '+labels[type],md:out.trim(),createdAt:Date.now()});
+  save();truncNote(src);toast('Fiche créée.');S.ui.sub='fiches';
+}
+async function makeCards(s,src,n){
+  const out=await ai([{role:'system',content:sys(s)},{role:'user',content:`Crée ${n} cartes de révision (recto/verso) à partir du cours. Recto : une question courte, une notion à définir, ou « Donne l'expression de… ». Verso : la réponse concise, formules en LaTeX. Couvre tout le cours, de l'essentiel au plus subtil. ${docNote(src.sources)}\nFormat : {"cards":[{"doc":1,"front":"...","back":"..."}]}\n${JSON_NOTE}\n\n=== COURS ===\n${srcText(src.sources)}`}],{json:true,max:3000,temperature:.4});
+  const list=(parseJSON(out).cards||[]).filter(c=>c&&c.front&&c.back);
+  if(!list.length)throw new Error('Aucune carte reçue. Réessaie.');
+  const have=new Set(s.cards.map(c=>c.front.trim().toLowerCase()));let k=0;
+  for(const c of list){if(have.has(String(c.front).trim().toLowerCase()))continue;s.cards.push({id:uid(),docId:docOf(src.sources,c.doc),front:String(c.front),back:String(c.back),box:0,due:0});k++;}
+  save();truncNote(src);toast(`${k} carte(s) ajoutée(s).`);S.ui.sub='cartes';
+}
+async function makeQcm(s,src,n,diff){
+  const out=await ai([{role:'system',content:sys(s)},{role:'user',content:`Crée un QCM de ${n} questions, niveau ${diff}, à 4 propositions dont UNE seule correcte. Mélange questions de cours, de raisonnement et petits calculs numériques (valeurs et unités). Les mauvaises réponses doivent être plausibles (erreurs classiques). Ajoute pour chaque question une explication courte de la bonne réponse. ${docNote(src.sources)}\nFormat : {"questions":[{"doc":1,"q":"...","choices":["...","...","...","..."],"answer":0,"explanation":"..."}]} où answer est l'indice (0 à 3) de la bonne réponse.\n${JSON_NOTE}\n\n=== COURS ===\n${srcText(src.sources)}`}],{json:true,max:3500,temperature:.5});
+  const qs=(parseJSON(out).questions||[]).filter(q=>q&&q.q&&Array.isArray(q.choices)&&q.choices.length>=2&&Number.isInteger(q.answer)&&q.answer>=0&&q.answer<q.choices.length)
+    .map(q=>{const ch=q.choices.slice(0,4).map(c=>String(c).replace(/^\s*[A-Da-d][.)]\s+/,''));const idx=shuffle(ch.map((_,i)=>i));
+      return{q:String(q.q),choices:idx.map(i=>ch[i]),answer:idx.indexOf(Math.min(q.answer,ch.length-1)),explanation:String(q.explanation||''),docId:docOf(src.sources,q.doc)};});
+  if(!qs.length)throw new Error('Aucune question exploitable reçue. Réessaie.');
+  s.quizzes.unshift({id:uid(),title:(src.sources.length===1?src.sources[0].title:'Toute la matière')+' ('+qs.length+' questions)',createdAt:Date.now(),questions:qs,attempts:[]});
+  save();truncNote(src);toast('QCM créé.');S.ui.sub='qcm';
+}
+async function makeExos(s,src,mode,n,diff){
+  const task=mode==='extract'
+    ?`Repère dans le texte les exercices, problèmes et questions de TD complets. Recopie chaque énoncé fidèlement (données numériques et sous-questions comprises), puis rédige une correction détaillée étape par étape (reprends celle du texte si elle existe). Si le texte ne contient aucun exercice, renvoie une liste vide.`
+    :`Le texte ci-dessous sert de modèle (cours, TD ou annale). Crée ${n} NOUVEAUX exercices du même type, de même structure et de même niveau (${diff}), avec d'autres valeurs numériques et d'autres situations. Chaque exercice : un énoncé complet avec sous-questions a), b), c)… (valeurs et unités), puis une correction détaillée étape par étape, avec formules et résultats numériques vérifiés.`;
+  const out=await ai([{role:'system',content:sys(s)},{role:'user',content:`${task} ${docNote(src.sources)}\nFormat : {"exercises":[{"doc":1,"title":"...","statement":"...","correction":"..."}]}\n${JSON_NOTE}\n\n=== TEXTE ===\n${srcText(src.sources)}`}],{json:true,max:4500,temperature:mode==='extract'?.2:.6});
+  const ex=(parseJSON(out).exercises||[]).filter(e=>e&&e.statement);
+  if(!ex.length)throw new Error(mode==='extract'?'Aucun exercice détecté dans ce document.':'Aucun exercice reçu. Réessaie.');
+  ex.forEach(e=>s.exercises.unshift({id:uid(),docId:docOf(src.sources,e.doc),title:String(e.title||'Exercice'),statement:String(e.statement),correction:String(e.correction||'(pas de correction fournie)'),source:mode==='extract'?'extrait':'généré',difficulty:diff||'',status:null,createdAt:Date.now()}));
+  save();truncNote(src);toast(`${ex.length} exercice(s) ajouté(s).`);S.ui.sub='exos';
+}
+
+/* Découpage d'un cours en parties */
+function splitSections(text){
+  const isHead=l=>{const t=l.trim();if(!t||t.length>90)return false;return /^#{1,4}\s+\S/.test(t)||/^\d+(\.\d+)*[.)]?\s+[A-ZÉÈÀÂÊÎÔÛ]/.test(t)||/^(chapitre|partie|section)\b/i.test(t);};
+  const secs=[];let cur={title:'Début',lines:[]};
+  for(const l of String(text||'').split('\n')){if(isHead(l)){if(cur.lines.join('').trim())secs.push(cur);cur={title:l.replace(/^\s*#+\s*/,'').trim().slice(0,80),lines:[l]};}else cur.lines.push(l);}
+  if(cur.lines.join('').trim())secs.push(cur);
+  const out=[];for(const x of secs.map(x=>({title:x.title,text:x.lines.join('\n').trim()}))){if(out.length&&words(x.text)<25)out[out.length-1].text+='\n\n'+x.text;else out.push(x);}
+  if(out.length<2&&words(text)>300){
+    const paras=String(text).split(/\n\s*\n/);const chunks=[];let buf=[],w=0;
+    for(const p of paras){buf.push(p);w+=words(p);if(w>=250){chunks.push(buf.join('\n\n'));buf=[];w=0;}}
+    if(buf.length)chunks.push(buf.join('\n\n'));
+    return chunks.map((c,i)=>({title:'Partie '+(i+1)+' – '+c.trim().split('\n')[0].slice(0,50),text:c}));
+  }
+  return out;
+}
+
+/* ============================== Progression & estimation ============================== */
+function docMastery(s,d){
+  const ch=new Set(s.docs.filter(isChapter).map(x=>x.id)),now=Date.now();let num=0,den=0,n=0;
+  for(const e of s.log){let w;if(e.docId===d.id){w=1;n++;}else if(!e.docId||!ch.has(e.docId))w=.3;else continue;
+    w*=Math.pow(.5,(now-e.t)/(14*864e5));num+=e.ok*w;den+=w;}
+  const self=s.self[d.id],prior=self?.1+(self-1)*.2:.25,pw=self?1.5:1;
+  return{m:(num+prior*pw)/(den+pw),n,conf:Math.min(1,n/10)};
+}
+const baseHours=d=>Math.min(5,Math.max(.5,.5+words(d.content)/1000));
+function estimateSubject(s){
+  const rows=s.docs.filter(d=>isChapter(d)&&words(d.content)>20).map(d=>{const mm=docMastery(s,d),base=baseHours(d);return{d,...mm,base,need:base*Math.max(0,(TARGET-mm.m)/TARGET)};});
+  const total=rows.reduce((a,r)=>a+r.need,0),tb=rows.reduce((a,r)=>a+r.base,0);
+  const days=daysLeft(s);
+  return{rows,total,mastery:tb?rows.reduce((a,r)=>a+r.m*r.base,0)/tb:0,conf:rows.length?rows.reduce((a,r)=>a+r.conf,0)/rows.length:0,days,perDay:days!=null&&days>0?total/days:null};
+}
+function logEntry(s,kind,docId,ok){s.log.push({t:Date.now(),kind,docId:docId||null,ok});if(s.log.length>3000)s.log=s.log.slice(-3000);}
+function todoList(){
+  const out=[];
+  for(const s of visibleSubjects()){const e=estimateSubject(s);for(const r of e.rows){const urg=e.days!=null&&e.days>=0?1+10/(e.days+2):1;out.push({s,r,score:r.need*urg});}}
+  return out.sort((a,b)=>b.score-a.score).filter(x=>x.r.need>.05).slice(0,4).map(({s,r})=>{
+    let msg,sub;
+    if(r.n===0){msg='Pas encore travaillé : génère une fiche puis un QCM';sub='fiches';}
+    else if(r.m<.55){msg='Encore fragile : refais un QCM ou des exercices';sub='qcm';}
+    else{msg='Presque prêt : consolide avec les cartes';sub='cartes';}
+    return{s,d:r.d,msg,sub,h:r.need};});
+}
+
+/* ============================== Vues ============================== */
+const gauge=(m)=>`<div class="gauge" style="--v:${pct(m)}%" title="Niveau estimé ${pct(m)} % – objectif 85 %"><i></i><b></b></div>`;
+const empty=(t,p,btn='')=>`<div class="empty"><h3>${t}</h3><p>${p}</p>${btn}</div>`;
+const keyHint=()=>S.settings.apiKey?'':`<p class="hint">Pour générer avec l’IA, il faut une clé Groq. <button class="link" data-act="tab" data-id="settings">Ouvrir les réglages</button></p>`;
+function examChip(s){const d=daysLeft(s);if(d==null)return '';
+  if(d<0)return `<span class="chip">Évaluation passée</span>`;
+  return `<span class="chip ${d<=7?'warn':''}">Évaluation ${d===0?'aujourd’hui':'dans '+d+' j'} (${fmtDate(s.examDate)})</span>`;}
+function optSelect(k,opts,def){const v=T.opts[k]??def;return `<select data-chg="opt" data-k="${k}">${opts.map(([val,lab])=>`<option value="${esc(val)}" ${String(val)===String(v)?'selected':''}>${esc(lab)}</option>`).join('')}</select>`;}
+function getSrc(s,name){const v=T.opts[name+s.id];if(v==='all'&&s.docs.length>1)return 'all';if(s.docs.some(d=>d.id===v))return v;return s.docs.length>1?'all':(s.docs[0]?.id||'all');}
+function srcSelect(s,name){const k=name+s.id,v=getSrc(s,name);
+  return `<select data-chg="opt" data-k="${k}" aria-label="Source">${s.docs.length>1?`<option value="all" ${v==='all'?'selected':''}>Tous les cours de la matière</option>`:''}${s.docs.map(d=>`<option value="${d.id}" ${v===d.id?'selected':''}>${esc(d.title||'Sans titre')} (${KINDS[d.kind]})</option>`).join('')}</select>`;}
+const noDocs=s=>s.docs.length?'':empty('Commence par ajouter un cours','Colle le texte de ton cours (ou importe un fichier) : tout le reste s’appuie dessus.',`<button class="btn pri" data-act="sub" data-id="cours">Aller à l’onglet Cours</button>`);
+
+function viewDash(){
+  const rows=visibleSubjects().map(s=>({s,e:estimateSubject(s)}));
+  const totalH=rows.reduce((a,r)=>a+r.e.total,0),nCh=rows.reduce((a,r)=>a+r.e.rows.length,0);
+  const next=rows.filter(r=>r.e.days!=null&&r.e.days>=0).sort((a,b)=>a.e.days-b.e.days)[0];
+  const todo=todoList();
+  const first=!S.subjects.some(s=>s.docs.length);
+  return `<div class="dash">
+  <div class="row" style="align-items:baseline"><h1>Où j’en suis</h1>${S.ui.sem!=='all'?`<span class="chip">${esc(semName(S.ui.sem))}</span>`:''}</div>
+  <p class="lead">${nCh?`Il me reste environ <mark>${fmtH(totalH)}</mark> de travail pour être prêt sur l’ensemble des matières.`:'Ajoute tes cours pour que j’estime le travail qu’il te reste.'}</p>
+  ${next?`<p class="muted">Prochaine évaluation : ${esc(next.s.name)}, ${next.e.days===0?'aujourd’hui':'dans '+next.e.days+' jour'+(next.e.days>1?'s':'')}${next.e.perDay!=null?` – soit ${fmtH(next.e.perDay)} de travail par jour d’ici là`:''}.</p>`:''}
+  ${!S.settings.apiKey?`<div class="banner"><span>Ajoute ta clé Groq pour activer la génération de fiches, cartes, QCM et exercices.</span><button class="btn" data-act="tab" data-id="settings">Ajouter ma clé</button></div>`:''}
+  ${(!first&&Date.now()-(S.settings.lastExport||0)>14*864e5)?`<div class="banner"><span>Tes données sont uniquement dans ce navigateur. Fais une sauvegarde pour ne rien perdre.</span><button class="btn" data-act="exportData">Exporter une sauvegarde</button></div>`:''}
+  ${first?`<h3 style="margin-top:22px">Pour démarrer</h3><ol class="steps"><li>Ouvre une matière et colle ton cours dans l’onglet Cours.</li><li>Génère une fiche : les formules sont rédigées en LaTeX.</li><li>Entraîne-toi avec les cartes, les QCM et les exercices : chaque résultat affine l’estimation du temps restant.</li></ol>`:''}
+  ${!rows.length?empty('Aucune matière ici','Ajoute ou déplace des matières dans l’onglet Gérer.','<button class="btn pri" data-act="tab" data-id="manage">Gérer mes matières</button>'):''}<ul class="subrows">${rows.map(({s,e})=>`<li class="subrow" style="--c:${s.color}">
+    <span><button class="name" data-act="go" data-id="${s.id}" data-sub="cours">${esc(s.name)}</button>${S.ui.sem==='all'?`<small class="muted" style="display:block;padding-left:15px">${esc(semName(s.semesterId))}</small>`:''}</span>
+    ${gauge(e.mastery)}<span class="num">${e.rows.length?pct(e.mastery)+' %':'–'}</span>
+    <span>${e.rows.length?fmtH(e.total)+' restantes':'<span class="muted">aucun cours</span>'}</span>
+    <span>${s.examDate?examChip(s):'<span class="muted">pas de date d’éval.</span>'}</span></li>`).join('')}</ul>
+  <p class="muted" style="font-size:14px;margin-top:8px">Le trait sur chaque jauge marque le niveau visé (85 %) pour aborder l’évaluation sereinement.</p>
+  ${todo.length?`<h2 style="margin-top:28px">À faire maintenant</h2><ul class="todo">${todo.map(t=>`<li style="--c:${t.s.color}"><span><b>${esc(t.s.name)}</b> – ${esc(t.d.title||'Sans titre')}<br><span class="muted">${t.msg} (environ ${fmtH(t.h)})</span></span><button class="btn sm" data-act="go" data-id="${t.s.id}" data-sub="${t.sub}">Ouvrir</button></li>`).join('')}</ul>`:''}
+  </div>`;
+}
+
+function viewSubject(s){
+  const subs=[['cours','Cours'],['fiches','Fiches'],['cartes','Cartes'],['qcm','QCM'],['exos','Exercices'],['prog','Progression']];
+  const P={cours:paneCours,fiches:paneFiches,cartes:paneCartes,qcm:paneQcm,exos:paneExos,prog:paneProg};
+  if(!P[S.ui.sub])S.ui.sub='cours';
+  return `<div class="subhead" style="--c:${s.color}"><h1>${esc(s.name)}</h1><span class="chip">${esc(semName(s.semesterId))}</span>${examChip(s)}</div>
+  <nav class="subnav">${subs.map(([k,l])=>`<button class="${S.ui.sub===k?'on':''}" data-act="sub" data-id="${k}">${l}</button>`).join('')}</nav>
+  <div class="pane" style="--c:${s.color}">${P[S.ui.sub](s)}</div>`;
+}
+
+/* --- Cours --- */
+function paneCours(s){
+  const cur=s.docs.find(d=>d.id===T.docId[s.id])||s.docs[0];if(cur)T.docId[s.id]=cur.id;
+  return `<div class="split"><aside class="doclist"><div class="row"><button class="btn pri" data-act="newDoc">Nouveau document</button>
+    <label class="btn">Importer<input type="file" hidden multiple accept=".txt,.md,.tex,.csv,.pdf" data-chg="importFile"></label></div>
+    ${s.docs.length?'<ul>'+s.docs.map(d=>`<li><button class="doc ${cur&&cur.id===d.id?'on':''}" data-act="selDoc" data-id="${d.id}"><b>${esc(d.title||'Sans titre')}</b><small>${KINDS[d.kind]}, ${words(d.content)} mots</small></button></li>`).join('')+'</ul>':'<p class="muted">Aucun document pour l’instant.</p>'}
+    <p class="muted" style="font-size:13px;margin-top:14px">Import : .txt, .md ou .pdf avec texte. Les formules d’un PDF s’extraient mal : n’hésite pas à les retaper en LaTeX.</p></aside>
+  <section class="editor">${cur?`<div class="row"><input class="title" value="${esc(cur.title)}" placeholder="Titre (ex. Chapitre 3 – Amplificateur opérationnel)" data-inp="docTitle" aria-label="Titre">
+    <select data-chg="docKind" aria-label="Type">${Object.entries(KINDS).map(([k,l])=>`<option value="${k}" ${cur.kind===k?'selected':''}>${l}</option>`).join('')}</select></div>
+    <textarea class="body" data-inp="docBody" placeholder="Colle ici ton cours. Les formules peuvent s’écrire en LaTeX : $R_{eq}=R_1+R_2$" aria-label="Contenu">${esc(cur.content)}</textarea>
+    <p class="muted" style="font-size:14px;margin:-4px 0 12px">Type « Annale / DS » ou « Exercices » : sert de modèle pour créer des exercices similaires, sans compter dans le temps de révision.</p>
+    <div class="row"><button class="btn" data-act="toggleParts">${T.showParts?'Masquer les parties':'Voir les parties'}</button><button class="btn red" data-act="delDoc">Supprimer</button></div>
+    ${T.showParts?partsView(cur):''}`:empty('Ajoute ton premier document','Colle un cours, un TD ou une annale, ou importe un fichier.')}</section></div>`;
+}
+function partsView(d){
+  const parts=splitSections(d.content);
+  if(!parts.length)return '<p class="muted">Rien à découper pour l’instant.</p>';
+  return `<h3 style="margin-top:20px">Réviser une partie précise</h3><ul class="parts">${parts.map((p,i)=>`<li><span><b>${esc(p.title)}</b> <span class="muted">${words(p.text)} mots</span></span>
+    <span class="row"><button class="btn sm" data-act="partGen" data-kind="fiche" data-i="${i}">Fiche</button><button class="btn sm" data-act="partGen" data-kind="qcm" data-i="${i}">QCM</button><button class="btn sm" data-act="partGen" data-kind="cards" data-i="${i}">Cartes</button></span></li>`).join('')}</ul>`;
+}
+
+/* --- Fiches --- */
+function paneFiches(s){
+  if(!s.docs.length)return noDocs(s);
+  return `<div class="gen"><h3>Créer une fiche à partir de mon cours</h3><div class="row">${srcSelect(s,'fiche')}
+    ${optSelect('ficheType',[['complete','Fiche complète'],['formulaire','Formulaire (formules seules)'],['express','Résumé express']],'complete')}
+    <button class="btn pri" data-act="genFiche">Générer la fiche</button></div>${keyHint()}</div>
+  ${s.fiches.length?s.fiches.map(f=>`<article class="fiche" id="fiche-${f.id}"><header><h3>${esc(f.title)}</h3><div class="row noprint">
+      <button class="btn sm" data-act="editFiche" data-id="${f.id}">${T.edit.has(f.id)?'Terminer':'Modifier'}</button>
+      <button class="btn sm" data-act="copyFiche" data-id="${f.id}">Copier</button>
+      <button class="btn sm" data-act="printFiche" data-id="${f.id}">Imprimer / PDF</button>
+      <button class="btn sm red" data-act="delFiche" data-id="${f.id}">Supprimer</button></div></header>
+    ${T.edit.has(f.id)?`<textarea rows="16" data-inp="ficheMd" data-id="${f.id}">${esc(f.md)}</textarea>`:md(f.md)}</article>`).join('')
+  :empty('Aucune fiche pour l’instant','Choisis un cours ci-dessus : l’IA en tire les définitions, les formules et les pièges à éviter.')}`;
+}
+
+/* --- Cartes --- */
+function paneCartes(s){
+  if(T.cs&&T.cs.sid===s.id)return cardSession(s);
+  if(!s.docs.length)return noDocs(s);
+  const due=s.cards.filter(c=>c.due<=Date.now()).length,mastered=s.cards.filter(c=>c.box>=4).length;
+  return `<div class="gen"><h3>Créer des cartes de révision</h3><div class="row">${srcSelect(s,'cards')}${optSelect('cardsN',[[10,'10 cartes'],[15,'15 cartes'],[20,'20 cartes'],[30,'30 cartes']],15)}
+    <button class="btn pri" data-act="genCards">Générer</button></div>${keyHint()}</div>
+  <div class="stats"><div><b>${s.cards.length}</b>cartes</div><div><b>${due}</b>à revoir aujourd’hui</div><div><b>${mastered}</b>bien maîtrisées</div></div>
+  <div class="row"><button class="btn pri" data-act="startCards" data-mode="due">Réviser ce qui est dû (${due})</button><button class="btn" data-act="startCards" data-mode="all">Tout réviser</button></div>
+  <div class="gen" style="margin-top:16px"><h3>Ajouter une carte à la main</h3><div class="row"><input id="nf" placeholder="Recto (question)" style="flex:1 1 220px"><input id="nb" placeholder="Verso (réponse)" style="flex:1 1 220px"><button class="btn" data-act="addCard">Ajouter</button></div></div>
+  ${s.cards.length?`<details><summary>Voir mes cartes (${s.cards.length})</summary><div class="list">${s.cards.slice(0,80).map(c=>`<div class="item"><span style="flex:1 1 300px"><b>${esc(c.front).slice(0,140)}</b><br><span class="muted">${esc(c.back).slice(0,140)}</span></span><span class="row"><span class="chip">Niveau ${c.box}/5</span><button class="btn sm red" data-act="delCard" data-id="${c.id}">Supprimer</button></span></div>`).join('')}${s.cards.length>80?'<p class="muted">… et '+(s.cards.length-80)+' autres.</p>':''}</div></details>`:''}`;
+}
+function cardSession(s){
+  const st=T.cs;
+  if(st.i>=st.ids.length)return `<div class="sess"><h2>Session terminée</h2><div class="stats" style="margin-top:14px"><div><b>${st.stats.know}</b>sues</div><div><b>${st.stats.almost}</b>presque</div><div><b>${st.stats.miss}</b>à revoir</div></div><button class="btn pri" data-act="endCards">Terminer</button></div>`;
+  const c=s.cards.find(x=>x.id===st.ids[st.i]);
+  if(!c){st.i++;return cardSession(s);}
+  return `<div class="sess"><div class="sesshead"><span>Carte ${st.i+1} sur ${st.ids.length}</span><button class="link" data-act="endCards">Quitter</button></div>
+  <div class="flash" data-act="flip" tabindex="0" role="button" aria-label="Retourner la carte"><small>${st.flip?'Réponse':'Question'}</small>${md(st.flip?c.back:c.front)}</div>
+  ${st.flip?`<div class="rates"><button class="btn wide red" data-act="rate" data-v="miss">À revoir (1)</button><button class="btn wide" data-act="rate" data-v="almost">Presque (2)</button><button class="btn wide" data-act="rate" data-v="know">Je sais (3)</button></div>`
+    :`<button class="btn pri wide" data-act="flip">Retourner la carte (espace)</button>`}</div>`;
+}
+
+/* --- QCM --- */
+function paneQcm(s){
+  if(T.qs&&T.qs.sid===s.id)return quizSession(s);
+  if(!s.docs.length)return noDocs(s);
+  return `<div class="gen"><h3>Créer un QCM d’entraînement</h3><div class="row">${srcSelect(s,'qcm')}${optSelect('qcmN',[[5,'5 questions'],[10,'10 questions'],[15,'15 questions']],10)}
+    ${optSelect('qcmD',[['moyen','Moyen'],['facile','Facile'],['difficile','Difficile (type DS)'],['mélangé','Mélangé']],'moyen')}
+    <button class="btn pri" data-act="genQcm">Générer le QCM</button></div>${keyHint()}</div>
+  ${s.wrongQ.length?`<div class="item" style="margin-bottom:12px"><span>Questions ratées à retravailler : <b>${s.wrongQ.length}</b></span><button class="btn" data-act="startWrong">Refaire mes erreurs</button></div>`:''}
+  ${s.quizzes.length?`<div class="list">${s.quizzes.map(q=>{const last=q.attempts[q.attempts.length-1];return `<div class="item"><span><b>${esc(q.title)}</b><br><span class="muted">${last?`Dernier score : ${last.score}/${last.total}`:'Pas encore fait'}</span></span><span class="row"><button class="btn pri sm" data-act="startQuiz" data-id="${q.id}">Lancer</button><button class="btn sm red" data-act="delQuiz" data-id="${q.id}">Supprimer</button></span></div>`;}).join('')}</div>`
+    :empty('Aucun QCM pour l’instant','Génère ton premier QCM depuis un cours : les mauvaises réponses reviennent ensuite dans « Mes erreurs ».')}`;
+}
+function quizSession(s){
+  const st=T.qs;
+  if(st.i>=st.qs.length){
+    const good=st.res.filter(r=>r.ok).length,miss=st.res.filter(r=>!r.ok);
+    return `<div class="sess"><h2>${good} bonne${good>1?'s':''} réponse${good>1?'s':''} sur ${st.qs.length}</h2>
+    ${miss.length?`<p class="muted">À revoir :</p>${miss.map(r=>`<div class="expl"><b>${renderMD(r.q.q).replace(/^<p>|<\/p>\s*$/g,'')}</b><br>Bonne réponse : ${renderMD(r.q.choices[r.q.answer]).replace(/^<p>|<\/p>\s*$/g,'')}${r.q.explanation?md(r.q.explanation):''}</div>`).join('')}`:'<p>Sans faute, bravo.</p>'}
+    <div class="row" style="margin-top:14px">${miss.length?`<button class="btn" data-act="retryMiss">Refaire les questions ratées</button>`:''}<button class="btn pri" data-act="endQuiz">Terminer</button></div></div>`;
+  }
+  const q=st.qs[st.i];
+  return `<div class="sess"><div class="sesshead"><span>${esc(st.title)} – question ${st.i+1} sur ${st.qs.length}</span><button class="link" data-act="endQuiz">Quitter</button></div>
+  <div class="qtext">${md(q.q)}</div>
+  ${q.choices.map((c,k)=>`<button class="choice ${st.sel!==null?(k===q.answer?'ok':(k===st.sel?'no':'')):''}" data-act="pick" data-k="${k}" ${st.sel!==null?'disabled':''}><span class="k">${'ABCD'[k]}</span><span>${md(c)}</span></button>`).join('')}
+  ${st.sel!==null?`${q.explanation?`<div class="expl">${md(q.explanation)}</div>`:''}<button class="btn pri wide" data-act="nextQ">${st.i+1<st.qs.length?'Question suivante (Entrée)':'Voir le résultat'}</button>`:''}</div>`;
+}
+
+/* --- Exercices --- */
+function paneExos(s){
+  if(!s.docs.length)return noDocs(s);
+  let list=s.exercises;
+  if(T.exFilter==='todo')list=list.filter(e=>!e.status||e.status==='ko'||e.status==='partial');
+  if(T.exFilter==='one')list=list.filter(e=>e.id===T.oneEx);
+  return `<div class="gen"><h3>Sortir les exercices de mes documents</h3><div class="row">${srcSelect(s,'exX')}<button class="btn pri" data-act="genExos" data-mode="extract">Extraire les exercices</button></div>
+    <p class="muted" style="font-size:14px;margin:8px 0 0">L’IA repère les énoncés dans ton cours, TD ou annale et rédige la correction.</p>${keyHint()}</div>
+  <div class="gen"><h3>Créer des exercices comme ceux que j’ai</h3><div class="row">${srcSelect(s,'exG')}${optSelect('exN',[[1,'1 exercice'],[2,'2 exercices'],[3,'3 exercices'],[5,'5 exercices']],2)}
+    ${optSelect('exD',[['comme l’original','Même niveau'],['un peu plus facile','Plus facile'],['plus difficile','Plus difficile']],'comme l’original')}
+    <button class="btn pri" data-act="genExos" data-mode="similar">Générer</button></div></div>
+  <div class="row" style="margin-bottom:14px"><select data-chg="exFilter">${[['all','Tous les exercices'],['todo','À faire ou à refaire']].map(([v,l])=>`<option value="${v}" ${T.exFilter===v?'selected':''}>${l}</option>`).join('')}${T.exFilter==='one'?'<option value="one" selected>Un exercice tiré au sort</option>':''}</select>
+    <button class="btn" data-act="randomEx">Tirer un exercice au hasard</button></div>
+  ${list.length?list.map(exCard).join(''):empty('Aucun exercice à afficher','Extrais ceux de tes documents ou génère-en de nouveaux ci-dessus.')}`;
+}
+function exCard(e){
+  const st={ok:['Réussi','ok'],partial:['En partie','warn'],ko:['Raté','bad']}[e.status];
+  return `<article class="exo status-${e.status||'none'}"><header><h3>${esc(e.title)}</h3><span class="row"><span class="chip">${e.source}</span>${st?`<span class="chip ${st[1]}">${st[0]}</span>`:''}</span></header>
+  ${md(e.statement)}
+  <div class="row" style="margin-top:10px"><button class="btn sm" data-act="toggleOpen" data-id="c${e.id}">${T.open.has('c'+e.id)?'Masquer la correction':'Voir la correction'}</button>
+    <button class="btn sm" data-act="toggleOpen" data-id="a${e.id}">Corriger ma réponse</button>
+    <button class="btn sm" data-act="variants" data-id="${e.id}">Variantes</button><button class="btn sm red" data-act="delEx" data-id="${e.id}">Supprimer</button></div>
+  ${T.open.has('c'+e.id)?`<div class="corr">${md(e.correction)}</div>`:''}
+  ${T.open.has('a'+e.id)?`<div style="margin-top:12px"><textarea rows="6" data-inp="answer" data-id="${e.id}" placeholder="Écris ta résolution ici (calculs, résultats, raisonnement)…">${esc(T.answers[e.id]||'')}</textarea>
+    <div class="row" style="margin-top:8px"><button class="btn pri sm" data-act="correctAI" data-id="${e.id}">Corriger avec l’IA</button></div>${e.feedback?`<div class="fb">${md(e.feedback)}</div>`:''}</div>`:''}
+  <div class="row" style="margin-top:12px"><span class="muted">Mon résultat :</span><button class="btn sm" data-act="exStatus" data-id="${e.id}" data-v="ok">Réussi</button><button class="btn sm" data-act="exStatus" data-id="${e.id}" data-v="partial">En partie</button><button class="btn sm" data-act="exStatus" data-id="${e.id}" data-v="ko">Raté</button></div></article>`;
+}
+
+/* --- Progression --- */
+function paneProg(s){
+  const e=estimateSubject(s),n=s.log.length;
+  return `${e.rows.length?`<div class="row" style="gap:20px;align-items:center"><div style="flex:1 1 260px;--c:${s.color}">${gauge(e.mastery)}</div><b style="font-size:20px">${pct(e.mastery)} %</b></div>
+  <p class="lead" style="margin-top:12px">Il te reste environ <mark>${fmtH(e.total)}</mark> de travail pour être apte à l’évaluation.</p>
+  ${e.days!=null?(e.days>=0?`<p>Évaluation ${e.days===0?'aujourd’hui':'dans '+e.days+' jour'+(e.days>1?'s':'')} : ${e.days>0?`environ <b>${fmtH(e.perDay)} par jour</b>.`:''} ${e.perDay!=null&&e.perDay>3?'<span class="chip warn">Ça devient serré, commence aujourd’hui</span>':''}</p>`:'<p class="muted">La date d’évaluation est passée.</p>'):'<p class="muted">Renseigne la date de l’évaluation plus bas pour obtenir un temps de travail par jour.</p>'}
+  <p class="muted">${n<8?'Estimation provisoire : fais des QCM, des cartes ou des exercices pour l’affiner.':`Estimation appuyée sur ${n} résultats enregistrés.`}</p>
+  <div class="tw"><table class="prog"><thead><tr><th>Chapitre</th><th>Niveau</th><th>Résultats</th><th>Mon ressenti</th><th>Reste</th></tr></thead><tbody>
+  ${e.rows.sort((a,b)=>b.need-a.need).map(r=>`<tr style="--c:${s.color}"><td><b>${esc(r.d.title||'Sans titre')}</b><br><span class="muted">${KINDS[r.d.kind]}, ${words(r.d.content)} mots</span></td>
+    <td class="g">${gauge(r.m)}<span class="muted" style="font-size:13px">${pct(r.m)} %</span></td><td>${r.n}</td>
+    <td><select data-chg="self" data-id="${r.d.id}" aria-label="Ressenti">${[['','Pas évalué'],[1,'1 – Rien compris'],[2,'2 – Bancal'],[3,'3 – Moyen'],[4,'4 – Solide'],[5,'5 – Maîtrisé']].map(([v,l])=>`<option value="${v}" ${String(s.self[r.d.id]||'')===String(v)?'selected':''}>${l}</option>`).join('')}</select></td>
+    <td><b>${fmtH(r.need)}</b></td></tr>`).join('')}</tbody></table></div>
+  <div class="row" style="margin:16px 0"><button class="btn pri" data-act="genPlan">Créer mon plan de révision avec l’IA</button></div>${keyHint()}
+  ${s.plan?`<div class="fiche">${md(s.plan)}</div>`:''}
+  <details><summary>Comment le temps restant est calculé</summary><p class="muted" style="max-width:70ch">Chaque chapitre a un temps de référence qui dépend de sa longueur (30 minutes + 1 heure par 1000 mots, entre 30 minutes et 5 heures). Ton niveau (de 0 à 100 %) vient de tes résultats aux QCM, cartes et exercices (les plus récents comptent davantage, la moitié du poids s’efface en 2 semaines) et de ton ressenti. Temps restant = temps de référence × (85 % − niveau) ÷ 85 %. C’est une estimation : plus tu enregistres de résultats, plus elle est fiable.</p></details>`
+  :empty('Pas encore de données','Ajoute au moins un cours de plus de 20 mots dans l’onglet Cours : l’estimation apparaît ici et s’affine avec tes QCM, cartes et exercices.')}
+  <div class="set"><h3>Réglages de la matière</h3><div class="row" style="margin-top:12px">
+    <div class="field" style="margin:0"><label for="sn">Nom</label><input id="sn" value="${esc(s.name)}" data-inp="subjName"></div>
+    <div class="field" style="margin:0"><label for="sd">Date de l’évaluation</label><input id="sd" type="date" value="${esc(s.examDate)}" data-chg="examDate"></div>
+    <div class="field" style="margin:0"><label for="ss">Semestre</label><select id="ss" data-chg="mSem" data-id="${s.id}">${semOptions(s.semesterId)}</select></div></div>
+    <div class="row" style="margin-top:14px"><button class="btn red" data-act="resetStats">Remettre les statistiques à zéro</button><button class="btn red" data-act="delSubject">Supprimer la matière</button></div></div>`;
+}
+
+/* --- Gérer matières & semestres --- */
+function subRow(s,i,n){
+  return `<div class="mrow" style="--c:${s.color}"><input type="color" value="${esc(s.color)}" data-chg="mColor" data-id="${s.id}" aria-label="Couleur">
+    <input class="grow" value="${esc(s.name)}" data-inp="mName" data-id="${s.id}" aria-label="Nom de la matière">
+    <select data-chg="mSem" data-id="${s.id}" aria-label="Semestre">${semOptions(s.semesterId)}</select>
+    <input type="date" value="${esc(s.examDate)}" data-chg="mDate" data-id="${s.id}" aria-label="Date d’évaluation" title="Date d’évaluation">
+    <button class="btn sm" data-act="moveSub" data-id="${s.id}" data-d="-1" ${i===0?'disabled':''} aria-label="Monter">↑</button><button class="btn sm" data-act="moveSub" data-id="${s.id}" data-d="1" ${i===n-1?'disabled':''} aria-label="Descendre">↓</button>
+    <button class="btn sm" data-act="openSub" data-id="${s.id}">Ouvrir</button><button class="btn sm red" data-act="delSubjectId" data-id="${s.id}">Supprimer</button></div>`;
+}
+function viewManage(){
+  return `<div class="dash"><h1>Matières et semestres</h1>
+  <p class="muted" style="max-width:66ch">Organise ici ton année : ajoute, renomme, réordonne ou supprime tes semestres et tes matières, change la couleur d’une matière ou la date de son évaluation. Les boutons de semestre en haut de la page filtrent les onglets et le tableau de bord.</p>
+  <h2 style="margin-top:26px">Semestres</h2><div style="margin-top:12px">
+  ${S.semesters.map((x,i)=>{const n=S.subjects.filter(s=>s.semesterId===x.id).length;return `<div class="mrow" style="--c:var(--ink2)"><input class="grow" value="${esc(x.name)}" data-inp="semName" data-id="${x.id}" aria-label="Nom du semestre"><span class="muted">${n} matière${n>1?'s':''}</span>
+    <button class="btn sm" data-act="moveSem" data-id="${x.id}" data-d="-1" ${i===0?'disabled':''} aria-label="Monter">↑</button><button class="btn sm" data-act="moveSem" data-id="${x.id}" data-d="1" ${i===S.semesters.length-1?'disabled':''} aria-label="Descendre">↓</button>
+    <button class="btn sm red" data-act="delSem" data-id="${x.id}">Supprimer</button></div>`;}).join('')}
+  <button class="btn" data-act="addSem">Ajouter un semestre</button></div>
+  <h2 style="margin-top:32px">Matières</h2>
+  ${S.semesters.map(x=>{const list=S.subjects.filter(s=>s.semesterId===x.id);return `<h3 style="margin:18px 0 8px">${esc(x.name)}</h3>${list.length?list.map((s,i)=>subRow(s,i,list.length)).join(''):'<p class="muted">Aucune matière dans ce semestre.</p>'}`;}).join('')}
+  <div style="margin-top:16px"><button class="btn pri" data-act="addSubject" data-stay="1">Ajouter une matière</button></div></div>`;
+}
+function storageInfo(){
+  let kb=0;try{kb=Math.round((localStorage.getItem(KEY)||'').length*2/1024);}catch{}
+  const le=S.settings.lastExport;
+  return `<p class="muted" style="max-width:66ch">Tout est enregistré dans ce navigateur, sur cet appareil : ça reste après avoir fermé l’onglet ou éteint l’ordinateur. Seul le texte de tes cours est gardé, pas les fichiers PDF eux-mêmes. En revanche, tout disparaît si tu vides les données du site, en navigation privée, ou si tu ouvres l’appli depuis une autre adresse ou un autre navigateur. Exporte une sauvegarde de temps en temps : elle ne contient pas ta clé API.</p>
+  <p>Espace utilisé : <b>${kb>1024?(kb/1024).toFixed(1)+' Mo':kb+' Ko'}</b> sur environ 5 Mo disponibles. ${le?'Dernière sauvegarde : '+new Date(le).toLocaleDateString('fr-FR'):'<span class="chip warn">Aucune sauvegarde exportée</span>'}</p>`;
+}
+
+/* --- Réglages --- */
+function viewSettings(){
+  const models=T.models||MODELS;
+  return `<div class="dash"><h1>Réglages</h1>
+  <div class="set" style="border:0;padding-top:8px"><h3>Clé API Groq</h3>
+  <p class="muted" style="max-width:62ch">La clé se crée gratuitement sur <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>. Elle reste dans ton navigateur et n’est envoyée qu’à Groq.</p>
+  <div class="field"><label for="k">Clé API</label><input id="k" type="password" autocomplete="off" value="${esc(S.settings.apiKey)}" placeholder="gsk_…" data-inp="apiKey"></div>
+  <div class="field"><label for="m">Modèle</label><input id="m" list="ml" value="${esc(S.settings.model)}" data-inp="model"><datalist id="ml">${models.map(m=>`<option value="${esc(m)}">`).join('')}</datalist></div>
+  <div class="field"><label for="mc">Taille maximale du cours envoyé à l’IA (caractères)</label><input id="mc" type="number" min="2000" max="40000" step="1000" value="${S.settings.maxChars}" data-inp="maxChars">
+    <span class="muted" style="font-size:14px">Plus c’est grand, plus l’IA voit de cours, mais la limite gratuite de Groq est vite atteinte. 9 000 convient bien.</span></div>
+  <div class="row"><button class="btn pri" data-act="testKey">Tester la connexion</button><button class="btn" data-act="loadModels">Charger la liste des modèles</button></div></div>
+  <div class="set"><h3>Mes données</h3>${storageInfo()}
+  <div class="row"><button class="btn" data-act="exportData">Exporter une sauvegarde</button><label class="btn">Importer une sauvegarde<input type="file" hidden accept=".json" data-chg="importData"></label><button class="btn red" data-act="wipe">Tout effacer</button></div></div></div>`;
+}
+
+/* ============================== Rendu ============================== */
+function renderTabs(){
+  const tab=(id,label,c)=>`<button class="tab ${S.ui.tab===id?'on':''}" style="--c:${c}" data-act="tab" data-id="${id}">${esc(label)}</button>`;
+  $('#sems').innerHTML=S.semesters.length>1?[['all','Tous les semestres'],...S.semesters.map(x=>[x.id,x.name])].map(([id,l])=>`<button class="pill ${S.ui.sem===id?'on':''}" data-act="setSem" data-id="${id}">${esc(l)}</button>`).join(''):'';
+  $('#tabs').innerHTML=tab('dash','Tableau de bord','var(--ink)')+visibleSubjects().map(s=>tab(s.id,s.name,s.color)).join('')+
+    `<button class="tab add" data-act="addSubject">+ Matière</button><button class="tab gear ${S.ui.tab==='manage'?'on':''}" data-act="tab" data-id="manage">Gérer</button><button class="tab gear ${S.ui.tab==='settings'?'on':''}" data-act="tab" data-id="settings">Réglages</button>`;
+}
+function render(){
+  renderTabs();
+  const m=$('#main'),s=curSubject();
+  if(S.ui.tab==='dash')m.innerHTML=viewDash();
+  else if(S.ui.tab==='settings')m.innerHTML=viewSettings();
+  else if(S.ui.tab==='manage')m.innerHTML=viewManage();
+  else if(s)m.innerHTML=viewSubject(s);
+  else{S.ui.tab='dash';m.innerHTML=viewDash();}
+}
+
+/* ============================== Actions ============================== */
+const A={},C={},I={};
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(el&&A[el.dataset.act]){e.preventDefault();A[el.dataset.act](el,e);}});
+document.addEventListener('change',e=>{const el=e.target.closest('[data-chg]');if(el&&C[el.dataset.chg])C[el.dataset.chg](el,e);});
+document.addEventListener('input',e=>{const el=e.target.closest('[data-inp]');if(el&&I[el.dataset.inp])I[el.dataset.inp](el,e);});
+document.addEventListener('keydown',e=>{
+  if(/INPUT|TEXTAREA|SELECT|BUTTON|A/.test(e.target.tagName)||e.metaKey||e.ctrlKey)return;
+  if(T.cs&&T.cs.i<T.cs.ids.length){if(e.key===' '){e.preventDefault();A.flip();}else if(T.cs.flip&&['1','2','3'].includes(e.key))A.rate({dataset:{v:['miss','almost','know'][+e.key-1]}});}
+  else if(T.qs&&T.qs.i<T.qs.qs.length){const k='abcd'.indexOf(e.key.toLowerCase()),k2='1234'.indexOf(e.key),kk=k>=0?k:k2;
+    if(kk>=0&&T.qs.sel===null)A.pick({dataset:{k:kk}});else if(e.key==='Enter'&&T.qs.sel!==null)A.nextQ();}
+});
+window.addEventListener('afterprint',()=>{document.querySelectorAll('.print-target').forEach(x=>x.classList.remove('print-target'));document.body.classList.remove('printing');});
+
+/* navigation */
+A.tab=el=>{S.ui.tab=el.dataset.id;save();render();window.scrollTo(0,0);};
+A.sub=el=>{S.ui.sub=el.dataset.id;if(el.closest('.doclist')===null)save();render();window.scrollTo(0,0);};
+A.go=el=>{S.ui.tab=el.dataset.id;S.ui.sub=el.dataset.sub||'cours';save();render();window.scrollTo(0,0);};
+A.addSubject=el=>{const n=(prompt('Nom de la nouvelle matière ?')||'').trim();if(!n)return;
+  const s=newSubject(n,S.subjects.length);s.semesterId=S.ui.sem!=='all'?S.ui.sem:S.semesters[0].id;S.subjects.push(s);
+  if(el&&el.dataset&&el.dataset.stay){save();render();return;}
+  S.ui.tab=s.id;S.ui.sub='cours';save();render();};
+A.setSem=el=>{S.ui.sem=el.dataset.id;const c=curSubject();if(c&&!visibleSubjects().includes(c))S.ui.tab='dash';save();render();};
+A.addSem=()=>{const n=(prompt('Nom du semestre ?','Semestre '+(S.semesters.length+1))||'').trim();if(!n)return;S.semesters.push({id:uid(),name:n});save();render();};
+I.semName=el=>{const x=S.semesters.find(y=>y.id===el.dataset.id);x.name=el.value;save();renderTabs();};
+A.moveSem=el=>{const i=S.semesters.findIndex(x=>x.id===el.dataset.id),j=i+(+el.dataset.d);if(j<0||j>=S.semesters.length)return;[S.semesters[i],S.semesters[j]]=[S.semesters[j],S.semesters[i]];save();render();};
+A.delSem=el=>{
+  if(S.semesters.length<=1){toast('Garde au moins un semestre.','bad');return;}
+  const x=S.semesters.find(y=>y.id===el.dataset.id),rest=S.semesters.filter(y=>y.id!==x.id),n=S.subjects.filter(s=>s.semesterId===x.id).length;
+  if(!confirm(n?`Supprimer « ${x.name} » ? Ses ${n} matière${n>1?'s':''} ser${n>1?'ont':'a'} déplacée${n>1?'s':''} vers « ${rest[0].name} ».`:`Supprimer « ${x.name} » ?`))return;
+  S.subjects.forEach(s=>{if(s.semesterId===x.id)s.semesterId=rest[0].id;});S.semesters=rest;if(S.ui.sem===x.id)S.ui.sem='all';save();render();};
+I.mName=el=>{const s=S.subjects.find(x=>x.id===el.dataset.id);s.name=el.value;save();renderTabs();};
+C.mSem=el=>{const s=S.subjects.find(x=>x.id===el.dataset.id);s.semesterId=el.value;if(S.ui.tab===s.id&&S.ui.sem!=='all')S.ui.sem=el.value;save();render();};
+C.mColor=el=>{S.subjects.find(x=>x.id===el.dataset.id).color=el.value;save();render();};
+C.mDate=el=>{S.subjects.find(x=>x.id===el.dataset.id).examDate=el.value;save();};
+A.moveSub=el=>{const s=S.subjects.find(x=>x.id===el.dataset.id),same=S.subjects.filter(x=>x.semesterId===s.semesterId),o=same[same.indexOf(s)+(+el.dataset.d)];if(!o)return;
+  const a=S.subjects.indexOf(s),b=S.subjects.indexOf(o);[S.subjects[a],S.subjects[b]]=[S.subjects[b],S.subjects[a]];save();render();};
+A.delSubjectId=el=>{const s=S.subjects.find(x=>x.id===el.dataset.id);if(!confirm(`Supprimer « ${s.name} » avec tous ses cours, fiches, cartes et exercices ?`))return;
+  S.subjects=S.subjects.filter(x=>x.id!==s.id);if(S.ui.tab===s.id)S.ui.tab='manage';save();render();};
+A.openSub=el=>{const s=S.subjects.find(x=>x.id===el.dataset.id);S.ui.tab=s.id;S.ui.sub='cours';if(S.ui.sem!=='all')S.ui.sem=s.semesterId;save();render();window.scrollTo(0,0);};
+A.delSubject=()=>{const s=curSubject();if(!confirm(`Supprimer « ${s.name} » avec tous ses cours, fiches, cartes et exercices ?`))return;S.subjects=S.subjects.filter(x=>x.id!==s.id);S.ui.tab='dash';save();render();};
+A.resetStats=()=>{const s=curSubject();if(!confirm('Effacer les résultats enregistrés (QCM, cartes, exercices, ressenti) pour cette matière ?'))return;s.log=[];s.self={};s.wrongQ=[];save();render();};
+I.subjName=el=>{const s=curSubject();s.name=el.value;save();renderTabs();const h=$('.subhead h1');if(h)h.textContent=s.name;};
+C.examDate=el=>{curSubject().examDate=el.value;save();render();};
+C.opt=el=>{T.opts[el.dataset.k]=el.value;};
+C.exFilter=el=>{T.exFilter=el.value;render();};
+C.self=el=>{const s=curSubject();if(el.value)s.self[el.dataset.id]=+el.value;else delete s.self[el.dataset.id];save();render();};
+
+/* cours */
+A.newDoc=()=>{const s=curSubject(),d={id:uid(),title:'',kind:'cours',content:'',createdAt:Date.now()};s.docs.push(d);T.docId[s.id]=d.id;T.showParts=false;save();render();const t=$('.editor .title');if(t)t.focus();};
+A.selDoc=el=>{T.docId[curSubject().id]=el.dataset.id;T.showParts=false;render();};
+A.delDoc=()=>{const s=curSubject(),d=curDoc();if(!d||!confirm(`Supprimer « ${d.title||'ce document'} » ?`))return;s.docs=s.docs.filter(x=>x.id!==d.id);delete s.self[d.id];delete T.docId[s.id];save();render();};
+A.toggleParts=()=>{T.showParts=!T.showParts;render();};
+I.docTitle=el=>{const d=curDoc();d.title=el.value;save();const b=$('.doc.on b');if(b)b.textContent=el.value||'Sans titre';};
+I.docBody=el=>{curDoc().content=el.value;save();};
+C.docKind=el=>{curDoc().kind=el.value;save();render();};
+async function initPdf(){
+  if(initPdf.done)return;const V='3.11.174',W=`https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${V}/pdf.worker.min.js`;
+  try{const r=await fetch(W);pdfjsLib.GlobalWorkerOptions.workerSrc=URL.createObjectURL(new Blob([await r.text()],{type:'text/javascript'}));}catch{pdfjsLib.GlobalWorkerOptions.workerSrc=W;}
+  initPdf.done=true;
+}
+async function pdfToText(file){
+  if(!window.pdfjsLib)throw new Error('lecteur PDF non chargé (connexion internet requise)');
+  await initPdf();const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let out='';
+  for(let p=1;p<=pdf.numPages;p++){const tc=await(await pdf.getPage(p)).getTextContent();let text='',lastY=null;
+    for(const it of tc.items){const y=it.transform[5];if(lastY!==null&&Math.abs(y-lastY)>3)text+='\n';else if(text&&!/[ \n]$/.test(text))text+=' ';text+=it.str;lastY=y;}
+    out+=text+'\n\n';}
+  return out;
+}
+C.importFile=async el=>{
+  const s=curSubject(),files=[...el.files];el.value='';if(!files.length)return;setBusy('Import en cours…');let n=0;
+  for(const f of files){try{const ext=f.name.split('.').pop().toLowerCase();const text=ext==='pdf'?await pdfToText(f):await f.text();
+    if(!text.trim())throw new Error('aucun texte trouvé (PDF scanné ?)');
+    const d={id:uid(),title:f.name.replace(/\.[^.]+$/,''),kind:'cours',content:text.trim(),createdAt:Date.now()};s.docs.push(d);T.docId[s.id]=d.id;n++;}
+    catch(err){toast(`${f.name} : ${err.message}`,'bad');}}
+  setBusy(null);if(n){save();toast(`${n} document${n>1?'s':''} importé${n>1?'s':''}.`);}render();
+};
+A.partGen=el=>{
+  const s=curSubject(),d=curDoc(),p=splitSections(d.content)[+el.dataset.i];if(!p)return;
+  const src=budget([{id:d.id,title:(d.title||'Cours')+' – '+p.title,text:p.text}]),kind=el.dataset.kind;
+  withAI('L’IA travaille sur cette partie…',async()=>{
+    if(kind==='fiche')await makeFiche(s,src,'complete');
+    else if(kind==='qcm')await makeQcm(s,src,5,'moyen');
+    else await makeCards(s,src,8);
+  });
+};
+
+/* fiches */
+A.genFiche=()=>{const s=curSubject();withAI('Rédaction de la fiche…',async()=>makeFiche(s,sourcesFor(s,getSrc(s,'fiche')),T.opts.ficheType||'complete'));};
+A.editFiche=el=>{const id=el.dataset.id;T.edit.has(id)?T.edit.delete(id):T.edit.add(id);render();};
+I.ficheMd=el=>{const f=curSubject().fiches.find(x=>x.id===el.dataset.id);f.md=el.value;save();};
+A.delFiche=el=>{const s=curSubject();if(!confirm('Supprimer cette fiche ?'))return;s.fiches=s.fiches.filter(f=>f.id!==el.dataset.id);save();render();};
+A.copyFiche=async el=>{const f=curSubject().fiches.find(x=>x.id===el.dataset.id);try{await navigator.clipboard.writeText(f.md);toast('Fiche copiée (Markdown).');}catch{toast('Copie impossible : sélectionne le texte à la main.','bad');}};
+A.printFiche=el=>{const n=document.getElementById('fiche-'+el.dataset.id);n.classList.add('print-target');document.body.classList.add('printing');window.print();};
+
+/* cartes */
+A.genCards=()=>{const s=curSubject();withAI('Création des cartes…',async()=>makeCards(s,sourcesFor(s,getSrc(s,'cards')),+(T.opts.cardsN||15)));};
+A.addCard=()=>{const s=curSubject(),f=$('#nf').value.trim(),b=$('#nb').value.trim();if(!f||!b){toast('Remplis le recto et le verso.','bad');return;}s.cards.push({id:uid(),docId:T.docId[s.id]||null,front:f,back:b,box:0,due:0});save();render();};
+A.delCard=el=>{const s=curSubject();s.cards=s.cards.filter(c=>c.id!==el.dataset.id);save();render();};
+A.startCards=el=>{const s=curSubject();let pool=el.dataset.mode==='all'?s.cards:s.cards.filter(c=>c.due<=Date.now());
+  if(!pool.length){toast(s.cards.length?'Rien à revoir aujourd’hui : bravo. Utilise « Tout réviser » si tu veux continuer.':'Crée d’abord des cartes.');return;}
+  T.cs={sid:s.id,ids:shuffle(pool).map(c=>c.id),i:0,flip:false,stats:{know:0,almost:0,miss:0}};render();};
+A.flip=()=>{if(!T.cs)return;T.cs.flip=!T.cs.flip;render();};
+A.rate=el=>{
+  const st=T.cs,s=curSubject(),c=s.cards.find(x=>x.id===st.ids[st.i]),v=el.dataset.v,INT=[0,1,3,7,16,35];
+  if(v==='know'){c.box=Math.min(5,c.box+1);c.due=Date.now()+INT[c.box]*864e5;}
+  else if(v==='almost'){c.due=Date.now()+864e5;}
+  else{c.box=0;c.due=Date.now();st.ids.push(c.id);}
+  logEntry(s,'carte',c.docId,v==='know'?1:v==='almost'?.5:0);st.stats[v]++;st.i++;st.flip=false;save();render();
+};
+A.endCards=()=>{T.cs=null;render();};
+
+/* qcm */
+A.genQcm=()=>{const s=curSubject();withAI('Création du QCM…',async()=>makeQcm(s,sourcesFor(s,getSrc(s,'qcm')),+(T.opts.qcmN||10),T.opts.qcmD||'moyen'));};
+A.delQuiz=el=>{const s=curSubject();if(!confirm('Supprimer ce QCM ?'))return;s.quizzes=s.quizzes.filter(q=>q.id!==el.dataset.id);save();render();};
+A.startQuiz=el=>{const s=curSubject(),q=s.quizzes.find(x=>x.id===el.dataset.id);T.qs={sid:s.id,quizId:q.id,title:q.title,qs:shuffle(q.questions),i:0,sel:null,res:[]};render();window.scrollTo(0,0);};
+A.startWrong=()=>{const s=curSubject();T.qs={sid:s.id,quizId:null,title:'Mes erreurs',qs:shuffle(s.wrongQ),i:0,sel:null,res:[]};render();};
+A.pick=el=>{
+  const st=T.qs;if(!st||st.sel!==null)return;const k=+el.dataset.k,q=st.qs[st.i],ok=k===q.answer,s=curSubject();
+  st.sel=k;st.res.push({q,ok});logEntry(s,'qcm',q.docId,ok?1:0);
+  if(ok)s.wrongQ=s.wrongQ.filter(w=>w.q!==q.q);else if(!s.wrongQ.some(w=>w.q===q.q))s.wrongQ.push(q);
+  save();render();
+};
+A.nextQ=()=>{
+  const st=T.qs;if(!st)return;st.i++;st.sel=null;
+  if(st.i>=st.qs.length&&st.quizId){const s=curSubject(),q=s.quizzes.find(x=>x.id===st.quizId);if(q){q.attempts.push({t:Date.now(),score:st.res.filter(r=>r.ok).length,total:st.qs.length});save();}}
+  render();window.scrollTo(0,0);
+};
+A.retryMiss=()=>{const st=T.qs;T.qs={sid:st.sid,quizId:null,title:'Questions ratées',qs:shuffle(st.res.filter(r=>!r.ok).map(r=>r.q)),i:0,sel:null,res:[]};render();};
+A.endQuiz=()=>{T.qs=null;render();};
+
+/* exercices */
+A.genExos=el=>{const s=curSubject(),mode=el.dataset.mode;
+  withAI(mode==='extract'?'Extraction des exercices…':'Création des exercices…',async()=>{
+    const src=sourcesFor(s,getSrc(s,mode==='extract'?'exX':'exG'));T.exFilter='all';
+    await makeExos(s,src,mode,+(T.opts.exN||2),T.opts.exD||'comme l’original');});};
+A.variants=el=>{const s=curSubject(),e=s.exercises.find(x=>x.id===el.dataset.id);
+  withAI('Création de variantes…',async()=>{
+    const src=budget([{id:e.docId,title:e.title,text:e.statement+'\n\nCorrection :\n'+e.correction}]);T.exFilter='all';
+    await makeExos(s,src,'similar',2,e.difficulty||'comme l’original');});};
+A.toggleOpen=el=>{const id=el.dataset.id;T.open.has(id)?T.open.delete(id):T.open.add(id);render();};
+I.answer=el=>{T.answers[el.dataset.id]=el.value;};
+A.delEx=el=>{const s=curSubject();if(!confirm('Supprimer cet exercice ?'))return;s.exercises=s.exercises.filter(x=>x.id!==el.dataset.id);save();render();};
+A.exStatus=el=>{const s=curSubject(),e=s.exercises.find(x=>x.id===el.dataset.id),v=el.dataset.v;e.status=v;logEntry(s,'exo',e.docId,v==='ok'?1:v==='partial'?.5:0);save();toast('Résultat enregistré.');render();};
+A.randomEx=()=>{const s=curSubject();if(!s.exercises.length){toast('Aucun exercice pour l’instant.');return;}
+  const w=e=>e.status==='ok'?.5:e.status==='partial'?2:3;const pool=s.exercises.flatMap(e=>Array(Math.round(w(e)*2)).fill(e));
+  T.oneEx=pool[Math.floor(Math.random()*pool.length)].id;T.exFilter='one';render();};
+A.correctAI=el=>{const s=curSubject(),e=s.exercises.find(x=>x.id===el.dataset.id),ans=(T.answers[e.id]||'').trim();
+  if(ans.length<5){toast('Écris d’abord ta réponse.','bad');return;}
+  withAI('Correction en cours…',async()=>{
+    const out=await ai([{role:'system',content:sys(s)},{role:'user',content:`Corrige la réponse d'un étudiant.\n\n=== ÉNONCÉ ===\n${e.statement}\n\n=== CORRECTION DE RÉFÉRENCE ===\n${e.correction}\n\n=== RÉPONSE DE L'ÉTUDIANT ===\n${ans}\n\nIndique ce qui est juste, les erreurs (avec explication), une note sur 20, et ce qu'il faut retravailler. Sois bienveillant mais exigeant. Termine par une dernière ligne exactement de la forme : VERDICT: réussi  ou  VERDICT: partiel  ou  VERDICT: raté`}],{max:1500,temperature:.2});
+    const m=out.match(/VERDICT\s*:\s*(réussi|partiel|raté)/i);
+    e.feedback=out.replace(/VERDICT\s*:.*$/im,'').trim();
+    if(m){const v=m[1].toLowerCase();e.status=v==='réussi'?'ok':v==='partiel'?'partial':'ko';logEntry(s,'exo',e.docId,v==='réussi'?1:v==='partiel'?.5:0);}
+    save();});};
+
+/* progression : plan IA */
+A.genPlan=()=>{const s=curSubject(),e=estimateSubject(s);
+  withAI('Construction du plan…',async()=>{
+    const data=e.rows.map(r=>({chapitre:r.d.title||'Sans titre',niveau_pct:pct(r.m),resultats_enregistres:r.n,heures_restantes:+r.need.toFixed(1)}));
+    const out=await ai([{role:'system',content:sys(s)},{role:'user',content:`Voici l'état de mes révisions.\nChapitres : ${JSON.stringify(data)}\nJours avant l'évaluation : ${e.days??'date non renseignée'}\nTemps total estimé : ${e.total.toFixed(1)} h.\n\nConstruis un plan de révision réaliste, jour par jour (14 jours maximum, ou moins si l'évaluation est plus proche), qui priorise mes points faibles et alterne fiches, cartes, QCM et exercices. Indique une durée pour chaque séance. Termine par 3 conseils courts. Réponds en Markdown.`}],{max:2000,temperature:.4});
+    s.plan=out.trim();save();});};
+
+/* réglages */
+I.apiKey=el=>{S.settings.apiKey=el.value.trim();save();};
+I.model=el=>{S.settings.model=el.value.trim();save();};
+I.maxChars=el=>{const v=+el.value;if(v>=2000&&v<=40000){S.settings.maxChars=v;save();}};
+A.testKey=()=>withAI('Test de la connexion…',async()=>{const r=await ai([{role:'user',content:'Réponds uniquement par le mot : OK'}],{max:10,temperature:0});toast('Connexion réussie : '+r.trim().slice(0,30));});
+A.loadModels=()=>withAI('Chargement des modèles…',async()=>{
+  const key=(S.settings.apiKey||'').trim();if(!key)throw new Error('Ajoute d’abord ta clé API.');
+  const r=await fetch(GROQ+'/models',{headers:{Authorization:'Bearer '+key}});if(!r.ok)throw new Error('Impossible de lire la liste (clé invalide ?).');
+  const d=await r.json();T.models=(d.data||[]).map(m=>m.id).filter(id=>!/whisper|tts|guard|playai|embed|orpheus/i.test(id)).sort();toast(T.models.length+' modèles disponibles.');});
+A.exportData=()=>{S.settings.lastExport=Date.now();save();const copy=JSON.parse(JSON.stringify(S));copy.settings.apiKey='';download(`revis-geii-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(copy,null,1));toast('Sauvegarde téléchargée.');render();};
+C.importData=async el=>{const f=el.files[0];el.value='';if(!f)return;
+  try{const d=migrate(JSON.parse(await f.text()));if(!d.subjects.length)throw new Error('fichier vide');if(!confirm('Remplacer toutes tes données actuelles par cette sauvegarde ?'))return;
+    d.settings.apiKey=S.settings.apiKey;d.settings.model=S.settings.model||d.settings.model;S=d;save();toast('Sauvegarde importée.');render();}
+  catch(e){toast('Fichier invalide : '+e.message,'bad');}};
+A.wipe=()=>{if(!confirm('Effacer TOUTES tes données (cours, fiches, cartes, résultats) ?'))return;const k=S.settings;S=defaultState();S.settings=k;S.ui.tab='dash';save();render();};
+
+render();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+</script>
+</body>
+</html>
